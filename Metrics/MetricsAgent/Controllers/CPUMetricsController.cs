@@ -1,4 +1,6 @@
-﻿using MetricsAgent.Models;
+﻿using AutoMapper;
+using MetricsAgent.Models;
+using MetricsAgent.Models.Dto;
 using MetricsAgent.Models.Requests;
 using MetricsAgent.Services;
 using MetricsAgent.Services.Impl;
@@ -13,31 +15,30 @@ namespace MetricsAgent.Controllers
     {
         private readonly ILogger<CPUMetricsController> _logger;
         private readonly ICPUMetricsRepository _cpuMetricsRepository;
+        private readonly IMapper _mapper;
 
         public CPUMetricsController(ICPUMetricsRepository cpuMetricsRepository,
-            ILogger<CPUMetricsController> logger)
+            ILogger<CPUMetricsController> logger,
+            IMapper mapper)
         {
             _cpuMetricsRepository = cpuMetricsRepository;
             _logger = logger;
+            _mapper = mapper;
         }
 
         [HttpPost("create")]
         public IActionResult Create([FromBody] CpuMetricCreateRequest request)
         {
             _logger.LogInformation("Create cpu metric.");
-            _cpuMetricsRepository.Create(new CPUMetric
-            {
-                Value = request.Value,
-                Time = (long)request.Time.TotalSeconds
-            });
+            _cpuMetricsRepository.Create(_mapper.Map<CPUMetric>(request));
             return Ok();
         }
 
         [HttpGet("from/{fromTime}/to/{toTime}")]
-        public ActionResult<IList<CPUMetric>> GetCpuMetrics([FromRoute] TimeSpan fromTime, [FromRoute] TimeSpan toTime)
+        public ActionResult<IList<CPUMetricDto>> GetCpuMetrics([FromRoute] TimeSpan fromTime, [FromRoute] TimeSpan toTime)
         {
             _logger.LogInformation("Get cpu metrics call.");
-            return Ok(_cpuMetricsRepository.GetByTimePeriod(fromTime, toTime));
+            return Ok(_mapper.Map<IList<CPUMetricDto>>(_cpuMetricsRepository.GetByTimePeriod(fromTime, toTime)));
         }
 
     }

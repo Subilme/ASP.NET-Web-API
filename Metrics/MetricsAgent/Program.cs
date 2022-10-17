@@ -1,4 +1,6 @@
-﻿using MetricsAgent.Services;
+﻿using AutoMapper;
+using MetricsAgent.Mappings;
+using MetricsAgent.Services;
 using MetricsAgent.Services.Impl;
 using Microsoft.AspNetCore.HttpLogging;
 using Microsoft.OpenApi.Any;
@@ -13,6 +15,24 @@ namespace MetricsAgent
         public static void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
+
+            #region Configure Options
+
+            builder.Services.Configure<DatabaseOptions>(options =>
+            {
+                builder.Configuration.GetSection("Settings:DatabaseOptions").Bind(options);
+            });
+
+
+            #endregion
+
+            #region Configure Mapping
+
+            var mapperConfiguration = new MapperConfiguration(mp => mp.AddProfile(new MapperProfile()));
+            var mapper = mapperConfiguration.CreateMapper();
+            builder.Services.AddSingleton(mapper);
+
+            #endregion
 
             #region Configure logging
 
@@ -35,11 +55,15 @@ namespace MetricsAgent
 
             #endregion
 
+            #region Configure repositories
+
             builder.Services.AddScoped<ICPUMetricsRepository, CPUMetricsRepository>();
             builder.Services.AddScoped<IDotNetMetricsRepository, DotNetMetricsRepository>();
             builder.Services.AddScoped<IHddMetricsRepository, HddMetricsRepository>();
             builder.Services.AddScoped<INetworkMetricsRepository, NetworkMetricsRepository>();
             builder.Services.AddScoped<IRamMetricsRepository, RamMetricsRepository>();
+
+            #endregion
 
             //ConfigureSqlLiteConnection();
 

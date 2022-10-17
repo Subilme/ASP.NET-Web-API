@@ -4,6 +4,8 @@ using MetricsAgent.Services;
 using MetricsAgent.Services.Impl;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using AutoMapper;
+using MetricsAgent.Models.Dto;
 
 namespace MetricsAgent.Controllers
 {
@@ -13,31 +15,30 @@ namespace MetricsAgent.Controllers
     {
         private readonly ILogger<NetworkMetricsController> _logger;
         private readonly INetworkMetricsRepository _networkMetricsRepository;
+        private readonly IMapper _mapper;
 
         public NetworkMetricsController(INetworkMetricsRepository networkMetricsRepository,
-            ILogger<NetworkMetricsController> logger)
+            ILogger<NetworkMetricsController> logger,
+            IMapper mapper)
         {
             _networkMetricsRepository = networkMetricsRepository;
             _logger = logger;
+            _mapper = mapper;
         }
 
         [HttpPost("create")]
         public IActionResult Create([FromBody] NetworkMetricCreateRequest request)
         {
             _logger.LogInformation("Create network metric.");
-            _networkMetricsRepository.Create(new NetworkMetric
-            {
-                Value = request.Value,
-                Time = (long)request.Time.TotalSeconds
-            });
+            _networkMetricsRepository.Create(_mapper.Map<NetworkMetric>(request));
             return Ok();
         }
 
         [HttpGet("from/{fromTime}/to/{toTime}")]
-        public ActionResult<IList<NetworkMetric>> GetNetworkMetrics([FromRoute] TimeSpan fromTime, [FromRoute] TimeSpan toTime)
+        public ActionResult<IList<NetworkMetricDto>> GetNetworkMetrics([FromRoute] TimeSpan fromTime, [FromRoute] TimeSpan toTime)
         {
             _logger.LogInformation("Get network metrics call.");
-            return Ok(_networkMetricsRepository.GetByTimePeriod(fromTime, toTime));
+            return Ok(_mapper.Map<IList<NetworkMetricDto>>(_networkMetricsRepository.GetByTimePeriod(fromTime, toTime)));
         }
     }
 }

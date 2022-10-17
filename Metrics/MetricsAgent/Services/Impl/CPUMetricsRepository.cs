@@ -1,129 +1,79 @@
 ﻿using MetricsAgent.Models;
-using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Options;
 using System.Data.SQLite;
+using Dapper;
 
 namespace MetricsAgent.Services.Impl
 {
     public class CPUMetricsRepository : ICPUMetricsRepository
     {
-        private const string connectionString = "Data Source = metrics.db; Version = 3; Pooling = true; Max Pool Size = 100;";
+        private readonly IOptions<DatabaseOptions> _databaseOptions;
+
+        public CPUMetricsRepository(IOptions<DatabaseOptions> databaseOptions)
+        {
+            _databaseOptions = databaseOptions;
+        }
+
         public void Create(CPUMetric item)
         {
-            using var connection = new SQLiteConnection(connectionString);
-            connection.Open();
+            using var connection = new SQLiteConnection(_databaseOptions.Value.ConnectionString);
 
-            using var cmd = new SQLiteCommand(connection);
-
-            cmd.CommandText = "INSERT INTO cpumetrics(value, time) VALUES(@value, @time)";
-            cmd.Parameters.AddWithValue("@value", item.Value);
-            cmd.Parameters.AddWithValue("@time", item.Time);
-            cmd.Prepare();
-            cmd.ExecuteNonQuery();
+            connection.Execute("INSERT INTO cpumetrics(value, time) VALUES(@value, @time)",
+                new
+                {
+                    value = item.Value,
+                    time = item.Time
+                });
         }
 
         public void Delete(int id)
         {
-            using var connection = new SQLiteConnection(connectionString);
-            connection.Open();
+            using var connection = new SQLiteConnection(_databaseOptions.Value.ConnectionString);
 
-            using var cmd = new SQLiteCommand(connection);
-
-            cmd.CommandText = "DELETE FROM cpumetrics WHERE id=@id";
-            cmd.Parameters.AddWithValue("@id", id);
-            cmd.Prepare();
-            cmd.ExecuteNonQuery();
+            connection.Execute("DELETE FROM cpumetrics WHERE id=@id",
+                new
+                {
+                    id = id
+                });
         }
 
         public IList<CPUMetric> GetAll()
         {
-            using var connection = new SQLiteConnection(connectionString);
-            connection.Open();
+            using var connection = new SQLiteConnection(_databaseOptions.Value.ConnectionString);
 
-            using var cmd = new SQLiteCommand(connection);
-            cmd.CommandText = "SELECT * FROM cpumetrics";
-
-            var returnList = new List<CPUMetric>();
-            using (SQLiteDataReader reader = cmd.ExecuteReader())
-            {
-                while (reader.Read())
-                {
-                    returnList.Add(new CPUMetric
-                    {
-                        Id = reader.GetInt32(0),
-                        Value = reader.GetInt32(1),
-                        Time = reader.GetInt32(2)
-                    }) ;
-                }
-            }
-
-            return returnList;
+            return connection.Query<CPUMetric>("SELECT Id, Time, Value FROM cpumetrics").ToList();
         }
 
         public CPUMetric GetById(int id)
         {
-            using var connection = new SQLiteConnection(connectionString);
-            connection.Open();
+            using var connection = new SQLiteConnection(_databaseOptions.Value.ConnectionString);
 
-            using var cmd = new SQLiteCommand(connection);
-            cmd.CommandText = "SELECT * FROM cpumetrics WHERE id=@id";
-
-            var returnList = new List<CPUMetric>();
-            using (SQLiteDataReader reader = cmd.ExecuteReader())
-            {
-                if (reader.Read())
-                {
-                    return new CPUMetric
-                    {
-                        Id = reader.GetInt32(0),
-                        Time = reader.GetInt32(1),
-                        Value = reader.GetInt32(2)
-                    };
-                }
-                else
-                {
-                    return null;
-                }
-            }
+            return connection.QuerySingle<CPUMetric>("SELECT * FROM cpumetrics WHERE id=@id", new { id = id });
         }
 
         public IList<CPUMetric> GetByTimePeriod(TimeSpan timeFrom, TimeSpan timeTo)
         {
-            using var connection = new SQLiteConnection(connectionString);
-            connection.Open();
+            using var connection = new SQLiteConnection(_databaseOptions.Value.ConnectionString);
 
-            using var cmd = new SQLiteCommand(connection);
-            cmd.CommandText = "SELECT * FROM cpumetrics WHERE time >= @timeFrom and time <= @timeTo";
-            cmd.Parameters.AddWithValue("@timeFrom", timeFrom);
-            cmd.Parameters.AddWithValue("@timeTo", timeTo);
-
-            var returnList = new List<CPUMetric>();
-            using (SQLiteDataReader reader = cmd.ExecuteReader())
-            {
-                while (reader.Read())
-                {
-                    returnList.Add(new CPUMetric
-                    {
-                        Id = reader.GetInt32(0),
-                        Value = reader.GetInt32(1),
-                        Time = reader.GetInt32(2)
-                    });
-                }
-            }
-
-            return returnList;
+            return connection.Query<CPUMetric>("SELECT * FROM cpumetrics WHERE time >= @timeFrom and time <= @timeTo",
+                new 
+                { 
+                    timeFrom = timeFrom.TotalSeconds,
+                    timeTo = timeTo.TotalSeconds
+                }).ToList();
         }
 
         public void Update(CPUMetric item)
         {
-            using var connection = new SQLiteConnection(connectionString);
-            using var cmd = new SQLiteCommand(connection);
+            using var connection = new SQLiteConnection(_databaseOptions.Value.ConnectionString);
 
-            cmd.CommandText = "UPDATE cpumetrics SET value = @value, time = @time WHERE id = @id";
-            cmd.Parameters.AddWithValue("@id", item.Id);
-            cmd.Parameters.AddWithValue("@value", item.Value);
-            cmd.Parameters.AddWithValue("@time", item.Time);
-            cmd.Prepare();
-            cmd.ExecuteNonQuery();
+            connection.Execute("UPDATE cpumetrics SET value = @value, time = @time WHERE id = @id",
+                new
+                {
+                    value = item.Value,
+                    time = item.Time,
+                    id = item.Id
+                });
         }
     }
 }
