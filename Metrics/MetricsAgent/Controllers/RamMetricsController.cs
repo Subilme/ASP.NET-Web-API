@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using AutoMapper;
 using MetricsAgent.Models.Dto;
+using MetricsAgent.Services.Impl;
 
 namespace MetricsAgent.Controllers
 {
@@ -37,7 +38,7 @@ namespace MetricsAgent.Controllers
         public ActionResult<IList<RamMetricDto>> GetCpuMetrics([FromRoute] TimeSpan fromTime, [FromRoute] TimeSpan toTime)
         {
             _logger.LogInformation("Get ram metrics call.");
-            return Ok(_mapper.Map<IList<RamMetricDto>>(_ramMetricsRepository.GetByTimePeriod(fromTime, toTime)));
+            return Ok(_ramMetricsRepository.GetByTimePeriod(fromTime, toTime).Select(metric => _mapper.Map<RamMetricDto>(metric)).ToList());
         }
     }
 }

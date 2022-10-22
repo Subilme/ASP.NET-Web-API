@@ -38,7 +38,7 @@ namespace MetricsAgent.Controllers
         public ActionResult<IList<DotNetMetricDto>> GetDotNetMetrics([FromRoute] TimeSpan fromTime, [FromRoute] TimeSpan toTime)
         {
             _logger.LogInformation("Get dotnet metrics call.");
-            return Ok(_mapper.Map<IList<DotNetMetricDto>>(_dotNetMetricsRepository.GetByTimePeriod(fromTime, toTime)));
+            return Ok(_dotNetMetricsRepository.GetByTimePeriod(fromTime, toTime).Select(metric => _mapper.Map<DotNetMetricDto>(metric)).ToList());
         }
     }
 }

@@ -38,8 +38,7 @@ namespace MetricsAgent.Controllers
         public ActionResult<IList<CPUMetricDto>> GetCpuMetrics([FromRoute] TimeSpan fromTime, [FromRoute] TimeSpan toTime)
         {
             _logger.LogInformation("Get cpu metrics call.");
-            return Ok(_mapper.Map<IList<CPUMetricDto>>(_cpuMetricsRepository.GetByTimePeriod(fromTime, toTime)));
+            return Ok(_cpuMetricsRepository.GetByTimePeriod(fromTime, toTime).Select(metric => _mapper.Map<CPUMetricDto>(metric)).ToList());
         }
-
     }
 }

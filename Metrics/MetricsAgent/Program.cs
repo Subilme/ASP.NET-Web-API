@@ -1,4 +1,6 @@
 ﻿using AutoMapper;
+using FluentMigrator.Runner;
+using MetricsAgent.Jobs;
 using MetricsAgent.Mappings;
 using MetricsAgent.Services;
 using MetricsAgent.Services.Impl;
@@ -6,7 +8,9 @@ using Microsoft.AspNetCore.HttpLogging;
 using Microsoft.OpenApi.Any;
 using Microsoft.OpenApi.Models;
 using NLog.Web;
-using System.Data.SQLite;
+using Quartz.Impl;
+using Quartz.Spi;
+using Quartz;
 
 namespace MetricsAgent
 {
@@ -57,15 +61,41 @@ namespace MetricsAgent
 
             #region Configure repositories
 
-            builder.Services.AddScoped<ICPUMetricsRepository, CPUMetricsRepository>();
-            builder.Services.AddScoped<IDotNetMetricsRepository, DotNetMetricsRepository>();
-            builder.Services.AddScoped<IHddMetricsRepository, HddMetricsRepository>();
-            builder.Services.AddScoped<INetworkMetricsRepository, NetworkMetricsRepository>();
-            builder.Services.AddScoped<IRamMetricsRepository, RamMetricsRepository>();
+            builder.Services.AddSingleton<ICPUMetricsRepository, CPUMetricsRepository>();
+            builder.Services.AddSingleton<IDotNetMetricsRepository, DotNetMetricsRepository>();
+            builder.Services.AddSingleton<IHddMetricsRepository, HddMetricsRepository>();
+            builder.Services.AddSingleton<INetworkMetricsRepository, NetworkMetricsRepository>();
+            builder.Services.AddSingleton<IRamMetricsRepository, RamMetricsRepository>();
 
             #endregion
 
-            //ConfigureSqlLiteConnection();
+            #region Configure Jobs
+
+            builder.Services.AddSingleton<IJobFactory, SingletonJobFactory>();
+            builder.Services.AddSingleton<ISchedulerFactory, StdSchedulerFactory>();
+
+            builder.Services.AddSingleton<CPUMetricJob>();
+            builder.Services.AddSingleton<DotNetMetricJob>();
+            builder.Services.AddSingleton<HddMetricJob>();
+            builder.Services.AddSingleton<NetworkMetricJob>();
+            builder.Services.AddSingleton<RamMetricJob>();
+
+            builder.Services.AddSingleton(new JobSchedule(typeof(CPUMetricJob), "0/5 * * ? * * *"));
+            builder.Services.AddSingleton(new JobSchedule(typeof(DotNetMetricJob), "0/5 * * ? * * *"));
+            builder.Services.AddSingleton(new JobSchedule(typeof(HddMetricJob), "0/5 * * ? * * *"));
+            builder.Services.AddSingleton(new JobSchedule(typeof(NetworkMetricJob), "0/5 * * ? * * *"));
+            builder.Services.AddSingleton(new JobSchedule(typeof(RamMetricJob), "0/5 * * ? * * *"));
+
+            builder.Services.AddHostedService<QuartzHostedService>();
+
+            #endregion
+
+            builder.Services.AddFluentMigratorCore()
+                .ConfigureRunner(rb =>
+                rb.AddSQLite()
+                .WithGlobalConnectionString(builder.Configuration["Settings:DatabaseOptions:ConnectionString"].ToString())
+                .ScanIn(typeof(Program).Assembly).For.Migrations()
+                ).AddLogging(lb => lb.AddFluentMigratorConsole());
 
             builder.Services.AddControllers();
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
@@ -95,30 +125,15 @@ namespace MetricsAgent
 
             app.MapControllers();
 
-            app.Run();
-        }
-
-        private static void ConfigureSqlLiteConnection()
-        {
-            const string connectionString = "Data Source = metrics.db; Version = 3; Pooling = true; Max Pool Size = 100;";
-            var connection = new SQLiteConnection(connectionString);
-            connection.Open();
-            PrepareSchema(connection);
-        }
-
-        private static void PrepareSchema(SQLiteConnection connection)
-        {
-            using (var command = new SQLiteCommand(connection))
+            var serviceScopeFactory = app.Services.GetRequiredService<IServiceScopeFactory>();
+            using (IServiceScope serviceScope = serviceScopeFactory.CreateScope())
             {
-                command.CommandText = "DROP TABLE IF EXISTS rammetrics";
-                command.ExecuteNonQuery();
+                var migrationRunner = serviceScope.ServiceProvider.GetRequiredService<IMigrationRunner>();
+                migrationRunner.MigrateUp();
 
-                command.CommandText =
-                    @"CREATE TABLE rammetrics(id INTEGER
-                    PRIMARY KEY,
-                    value INT, time INT)";
-                command.ExecuteNonQuery();
             }
+
+            app.Run();
         }
     }
 }
