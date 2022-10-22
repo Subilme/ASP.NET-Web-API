@@ -7,6 +7,13 @@ namespace MetricsManager.Controllers
     [ApiController]
     public class CPUMetricsController : ControllerBase
     {
+        private readonly ILogger<CPUMetricsController> _logger;
+
+        public CPUMetricsController(ILogger<CPUMetricsController> logger)
+        {
+            _logger = logger;
+        }
+
         [HttpGet("agent/{agentId}/from/{fromTime}/to/{toTime}")]
         public IActionResult GetMetricsFromAgent([FromRoute] int agentId, [FromRoute] TimeSpan fromTime, [FromRoute] TimeSpan toTime)
         {
