@@ -1,5 +1,8 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using MetricsManager.Models;
+using MetricsManager.Models.Requests;
+using MetricsManager.Services.Client;
 using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json;
 
 namespace MetricsManager.Controllers
 {
@@ -7,14 +10,66 @@ namespace MetricsManager.Controllers
     [ApiController]
     public class CPUMetricsController : ControllerBase
     {
-        [HttpGet("agent/{agentId}/from/{fromTime}/to/{toTime}")]
-        public IActionResult GetMetricsFromAgent([FromRoute] int agentId, [FromRoute] TimeSpan fromTime, [FromRoute] TimeSpan toTime)
+        private readonly ILogger<CPUMetricsController> _logger;
+        private ICPUMetricsAgentClient _metricsAgentClient;
+        private IHttpClientFactory _httpClientFactory;
+        private AgentPool _agentPool;
+
+        public CPUMetricsController(ILogger<CPUMetricsController> logger,
+            ICPUMetricsAgentClient metricsAgentClient,
+            IHttpClientFactory httpClientFactory,
+            AgentPool agentPool)
         {
-            return Ok();
+            _logger = logger;
+            _metricsAgentClient = metricsAgentClient;
+            _httpClientFactory = httpClientFactory;
+            _agentPool = agentPool;
         }
 
-        [HttpGet("all/from/{fromTime}/to/{toTime}")]
-        public IActionResult GetMetricsFromAll([FromRoute] TimeSpan fromTime, [FromRoute] TimeSpan toTime)
+        //[HttpGet("agent/{agentId}/from/{fromTime}/to/{toTime}")]
+        [HttpGet("get-all-by-id")]
+        public ActionResult<CPUMetricsResponse> GetMetricsFromAgent(
+            [FromQuery] int agentId, [FromQuery] TimeSpan fromTime, [FromQuery] TimeSpan toTime)
+        {
+            return Ok(_metricsAgentClient.GetCPUMetrics(new CPUMetricsRequest
+            {
+                AgentId = agentId,
+                FromTime = fromTime,
+                ToTime = toTime
+            }));
+        }
+
+        //[HttpGet("agent-old/{agentId}/from/{fromTime}/to/{toTime}")]
+        //public IActionResult GetMetricsFromAgentOld([FromRoute] int agentId, [FromRoute] TimeSpan fromTime, [FromRoute] TimeSpan toTime)
+        //{
+        //    AgentInfo agentInfo = _agentPool.Get().FirstOrDefault(agent => agent.AgentId == agentId);
+        //    if (agentInfo == null)
+        //    {
+        //        return BadRequest();
+        //    }
+
+        //    string requestStr = 
+        //        $"{agentInfo.AgentAddress}api/metrics/cpu/from/{fromTime.ToString("dd\\.hh\\:mm\\:ss")}/to/{toTime.ToString("dd\\.hh\\:mm\\:ss")}";
+
+        //    HttpRequestMessage httpRequestMessage = new HttpRequestMessage(HttpMethod.Get, requestStr);
+        //    httpRequestMessage.Headers.Add("Accept", "application/json");
+
+        //    HttpClient httpClient = _httpClientFactory.CreateClient();
+        //    HttpResponseMessage response =  httpClient.Send(httpRequestMessage);
+        //    if (response.IsSuccessStatusCode)
+        //    {
+        //        string responseStr = response.Content.ReadAsStringAsync().Result;
+        //        CPUMetricsResponse cpuMetricsResponse =
+        //            (CPUMetricsResponse)JsonConvert.DeserializeObject(responseStr, typeof(CPUMetricsResponse));
+        //    }
+
+        //    return BadRequest();
+        //}
+
+        //[HttpGet("all/from/{fromTime}/to/{toTime}")]
+        [HttpGet("get-all")]
+        public IActionResult GetMetricsFromAll(
+            [FromQuery] TimeSpan fromTime, [FromQuery] TimeSpan toTime)
         {
             return Ok();
         }

@@ -2,36 +2,24 @@
 {
     public class AgentPool
     {
-        private static AgentPool _instance;
-
-        public static AgentPool Instance
-        {
-            get
-            {
-                if (_instance == null)
-                    _instance = new AgentPool();
-                return _instance;
-            }
-        }
-
-        private Dictionary<int, AgentInfo> _values;
+        private Dictionary<int, AgentInfo> _agents;
         
-        public Dictionary<int, AgentInfo> Values { get { return _values; } set { _values = value; } }
+        public Dictionary<int, AgentInfo> Agents { get { return _agents; } set { _agents = value; } }
 
         public AgentPool()
         {
-            _values = new Dictionary<int, AgentInfo>();
+            _agents = new Dictionary<int, AgentInfo>();
         }
 
         public void Add(AgentInfo value)
         {
-            if (!_values.ContainsKey(value.AgentId))
-                _values.Add(value.AgentId, value);
+            if (!_agents.ContainsKey(value.AgentId))
+                _agents.Add(value.AgentId, value);
         }
 
         public AgentInfo[] Get()
         {
-            return _values.Values.ToArray();
+            return _agents.Values.ToArray();
         }
     }
 }
