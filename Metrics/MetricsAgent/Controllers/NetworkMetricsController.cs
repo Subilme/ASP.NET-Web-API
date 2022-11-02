@@ -35,10 +35,14 @@ namespace MetricsAgent.Controllers
         }
 
         [HttpGet("from/{fromTime}/to/{toTime}")]
-        public ActionResult<IList<NetworkMetricDto>> GetNetworkMetrics([FromRoute] TimeSpan fromTime, [FromRoute] TimeSpan toTime)
+        public ActionResult<GetNetworkMetricsResponse> GetNetworkMetrics([FromRoute] TimeSpan fromTime, [FromRoute] TimeSpan toTime)
         {
             _logger.LogInformation("Get network metrics call.");
-            return Ok(_networkMetricsRepository.GetByTimePeriod(fromTime, toTime).Select(metric => _mapper.Map<NetworkMetricDto>(metric)).ToList());
+            return Ok(new GetNetworkMetricsResponse
+            {
+                Metrics = _networkMetricsRepository.GetByTimePeriod(fromTime, toTime)
+                .Select(metric => _mapper.Map<NetworkMetricDto>(metric)).ToList()
+            });
         }
     }
 }

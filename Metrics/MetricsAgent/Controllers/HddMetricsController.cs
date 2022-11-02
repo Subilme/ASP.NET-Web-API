@@ -35,10 +35,14 @@ namespace MetricsAgent.Controllers
         }
 
         [HttpGet("from/{fromTime}/to/{toTime}")]
-        public ActionResult<IList<HddMetricDto>> GetHDDMetrics([FromRoute] TimeSpan fromTime, [FromRoute] TimeSpan toTime)
+        public ActionResult<GetHddMetricsResponse> GetHDDMetrics([FromRoute] TimeSpan fromTime, [FromRoute] TimeSpan toTime)
         {
             _logger.LogInformation("Get hdd metrics call.");
-            return Ok(_hddMetricsRepository.GetByTimePeriod(fromTime, toTime).Select(metric => _mapper.Map<HddMetricDto>(metric)).ToList());
+            return Ok(new GetHddMetricsResponse
+            {
+                Metrics = _hddMetricsRepository.GetByTimePeriod(fromTime, toTime)
+                    .Select(metric => _mapper.Map<HddMetricDto>(metric)).ToList()
+            });
         }
     }
 }

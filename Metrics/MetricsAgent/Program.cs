@@ -11,6 +11,7 @@ using NLog.Web;
 using Quartz.Impl;
 using Quartz.Spi;
 using Quartz;
+using MetricsAgent.Converters;
 
 namespace MetricsAgent
 {
@@ -90,6 +91,8 @@ namespace MetricsAgent
 
             #endregion
 
+            #region Confidure Database
+
             builder.Services.AddFluentMigratorCore()
                 .ConfigureRunner(rb =>
                 rb.AddSQLite()
@@ -97,7 +100,11 @@ namespace MetricsAgent
                 .ScanIn(typeof(Program).Assembly).For.Migrations()
                 ).AddLogging(lb => lb.AddFluentMigratorConsole());
 
-            builder.Services.AddControllers();
+            #endregion
+
+            builder.Services.AddControllers()
+                .AddJsonOptions(options =>
+                    options.JsonSerializerOptions.Converters.Add(new CustomTimeSpanConverter()));
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen(c =>

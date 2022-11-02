@@ -1,9 +1,12 @@
+using MetricsManager.Converters;
 using MetricsManager.Models;
+using MetricsManager.Services.Client;
+using MetricsManager.Services.Client.Impl;
 using Microsoft.AspNetCore.HttpLogging;
-using Microsoft.AspNetCore.Mvc.Formatters;
 using Microsoft.OpenApi.Any;
 using Microsoft.OpenApi.Models;
 using NLog.Web;
+using Polly;
 
 namespace MetricsManager
 {
@@ -38,12 +41,26 @@ namespace MetricsManager
 
             builder.Services.AddSingleton<AgentPool>();
 
-            builder.Services.AddControllers();
+            builder.Services.AddHttpClient();
+            builder.Services.AddHttpClient<ICPUMetricsAgentClient, CPUMetricsAgentClient>()
+                .AddTransientHttpErrorPolicy(p => p.WaitAndRetryAsync(retryCount: 3,
+                sleepDurationProvider: (attemptCount) => TimeSpan.FromSeconds(attemptCount * 2),
+                onRetry: (response, sleepDuration, attemptCount, context) =>
+                {
+                    var logger = builder.Services.BuildServiceProvider().GetService<ILogger<Program>>();
+                    logger.LogError(response.Exception != null ? response.Exception :
+                        new Exception($"\n{response.Result.StatusCode}: {response.Result.RequestMessage}"),
+                        $"(attempt: {attemptCount}) request exception.");
+                }));
+
+            builder.Services.AddControllers()
+                .AddJsonOptions(options =>
+                    options.JsonSerializerOptions.Converters.Add(new CustomTimeSpanConverter()));
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen(c =>
             {
-                c.SwaggerDoc("v1", new OpenApiInfo { Title = "MetricsAgent", Version = "v1" });
+                c.SwaggerDoc("v1", new OpenApiInfo { Title = "MetricsManager", Version = "v1" });
 
                 // Поддержка TimeSpan
                 c.MapType<TimeSpan>(() => new OpenApiSchema
@@ -63,7 +80,7 @@ namespace MetricsManager
             }
 
             app.UseAuthorization();
-
+            app.UseHttpLogging();
 
             app.MapControllers();
 

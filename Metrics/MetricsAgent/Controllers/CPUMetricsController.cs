@@ -3,8 +3,6 @@ using MetricsAgent.Models;
 using MetricsAgent.Models.Dto;
 using MetricsAgent.Models.Requests;
 using MetricsAgent.Services;
-using MetricsAgent.Services.Impl;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace MetricsAgent.Controllers
@@ -35,10 +33,15 @@ namespace MetricsAgent.Controllers
         }
 
         [HttpGet("from/{fromTime}/to/{toTime}")]
-        public ActionResult<IList<CPUMetricDto>> GetCpuMetrics([FromRoute] TimeSpan fromTime, [FromRoute] TimeSpan toTime)
+        public ActionResult<GetCPUMetricsResponse> GetCpuMetrics([FromRoute] TimeSpan fromTime, [FromRoute] TimeSpan toTime)
         {
             _logger.LogInformation("Get cpu metrics call.");
-            return Ok(_cpuMetricsRepository.GetByTimePeriod(fromTime, toTime).Select(metric => _mapper.Map<CPUMetricDto>(metric)).ToList());
+
+            return Ok(new GetCPUMetricsResponse
+            {
+                Metrics = _cpuMetricsRepository.GetByTimePeriod(fromTime, toTime)
+                    .Select(metric => _mapper.Map<CPUMetricDto>(metric)).ToList()
+            });
         }
     }
 }
