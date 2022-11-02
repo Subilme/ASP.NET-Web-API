@@ -1,3 +1,18 @@
+﻿using AutoMapper;
+using FluentMigrator.Runner;
+using MetricsAgent.Jobs;
+using MetricsAgent.Mappings;
+using MetricsAgent.Services;
+using MetricsAgent.Services.Impl;
+using Microsoft.AspNetCore.HttpLogging;
+using Microsoft.OpenApi.Any;
+using Microsoft.OpenApi.Models;
+using NLog.Web;
+using Quartz.Impl;
+using Quartz.Spi;
+using Quartz;
+using MetricsAgent.Converters;
+
 namespace MetricsAgent
 {
     public class Program
@@ -6,12 +21,102 @@ namespace MetricsAgent
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            // Add services to the container.
+            #region Configure Options
 
-            builder.Services.AddControllers();
+            builder.Services.Configure<DatabaseOptions>(options =>
+            {
+                builder.Configuration.GetSection("Settings:DatabaseOptions").Bind(options);
+            });
+
+
+            #endregion
+
+            #region Configure Mapping
+
+            var mapperConfiguration = new MapperConfiguration(mp => mp.AddProfile(new MapperProfile()));
+            var mapper = mapperConfiguration.CreateMapper();
+            builder.Services.AddSingleton(mapper);
+
+            #endregion
+
+            #region Configure logging
+
+            builder.Host.ConfigureLogging(logging =>
+            {
+                logging.ClearProviders();
+                logging.AddConsole();
+
+            }).UseNLog(new NLogAspNetCoreOptions() { RemoveLoggerFactoryFilter = true });
+
+            builder.Services.AddHttpLogging(logging =>
+            {
+                logging.LoggingFields = HttpLoggingFields.All | HttpLoggingFields.RequestQuery;
+                logging.RequestBodyLogLimit = 4096;
+                logging.ResponseBodyLogLimit = 4096;
+                logging.RequestHeaders.Add("Authorization");
+                logging.RequestHeaders.Add("X-Real-IP");
+                logging.RequestHeaders.Add("X-Forwarded-For");
+            });
+
+            #endregion
+
+            #region Configure repositories
+
+            builder.Services.AddSingleton<ICPUMetricsRepository, CPUMetricsRepository>();
+            builder.Services.AddSingleton<IDotNetMetricsRepository, DotNetMetricsRepository>();
+            builder.Services.AddSingleton<IHddMetricsRepository, HddMetricsRepository>();
+            builder.Services.AddSingleton<INetworkMetricsRepository, NetworkMetricsRepository>();
+            builder.Services.AddSingleton<IRamMetricsRepository, RamMetricsRepository>();
+
+            #endregion
+
+            #region Configure Jobs
+
+            builder.Services.AddSingleton<IJobFactory, SingletonJobFactory>();
+            builder.Services.AddSingleton<ISchedulerFactory, StdSchedulerFactory>();
+
+            builder.Services.AddSingleton<CPUMetricJob>();
+            builder.Services.AddSingleton<DotNetMetricJob>();
+            builder.Services.AddSingleton<HddMetricJob>();
+            builder.Services.AddSingleton<NetworkMetricJob>();
+            builder.Services.AddSingleton<RamMetricJob>();
+
+            builder.Services.AddSingleton(new JobSchedule(typeof(CPUMetricJob), "0/5 * * ? * * *"));
+            builder.Services.AddSingleton(new JobSchedule(typeof(DotNetMetricJob), "0/5 * * ? * * *"));
+            builder.Services.AddSingleton(new JobSchedule(typeof(HddMetricJob), "0/5 * * ? * * *"));
+            builder.Services.AddSingleton(new JobSchedule(typeof(NetworkMetricJob), "0/5 * * ? * * *"));
+            builder.Services.AddSingleton(new JobSchedule(typeof(RamMetricJob), "0/5 * * ? * * *"));
+
+            builder.Services.AddHostedService<QuartzHostedService>();
+
+            #endregion
+
+            #region Confidure Database
+
+            builder.Services.AddFluentMigratorCore()
+                .ConfigureRunner(rb =>
+                rb.AddSQLite()
+                .WithGlobalConnectionString(builder.Configuration["Settings:DatabaseOptions:ConnectionString"].ToString())
+                .ScanIn(typeof(Program).Assembly).For.Migrations()
+                ).AddLogging(lb => lb.AddFluentMigratorConsole());
+
+            #endregion
+
+            builder.Services.AddControllers()
+                .AddJsonOptions(options =>
+                    options.JsonSerializerOptions.Converters.Add(new CustomTimeSpanConverter()));
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
-            builder.Services.AddSwaggerGen();
+            builder.Services.AddSwaggerGen(c =>
+            {
+                c.SwaggerDoc("v1", new OpenApiInfo { Title = "MetricsAgent", Version = "v1" });
+
+                c.MapType<TimeSpan>(() => new OpenApiSchema
+                {
+                    Type = "string",
+                    Example = new OpenApiString("00:00:00")
+                });
+            });
 
             var app = builder.Build();
 
@@ -23,9 +128,17 @@ namespace MetricsAgent
             }
 
             app.UseAuthorization();
-
+            app.UseHttpLogging();
 
             app.MapControllers();
+
+            var serviceScopeFactory = app.Services.GetRequiredService<IServiceScopeFactory>();
+            using (IServiceScope serviceScope = serviceScopeFactory.CreateScope())
+            {
+                var migrationRunner = serviceScope.ServiceProvider.GetRequiredService<IMigrationRunner>();
+                migrationRunner.MigrateUp();
+
+            }
 
             app.Run();
         }
