@@ -1,4 +1,5 @@
-﻿using MetricsManager.Services.Client;
+﻿using MetricsManager.Models.Requests;
+using MetricsManager.Services.Client;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -18,10 +19,11 @@ namespace MetricsManager.Controllers
             _metricsAgentClient = metricsAgentClient;
         }
 
-        [HttpGet("agent/{agentId}/from/{fromTime}/to/{toTime}")]
-        public IActionResult GetMetricsFromAgent([FromRoute] int agentId, [FromRoute] TimeSpan fromTime, [FromRoute] TimeSpan toTime)
+        //[HttpGet("agent/{agentId}/from/{fromTime}/to/{toTime}")]
+        [HttpGet("get-all-by-id")]
+        public ActionResult<NetworkMetricsResponse> GetMetricsFromAgent([FromRoute] int agentId, [FromRoute] TimeSpan fromTime, [FromRoute] TimeSpan toTime)
         {
-            return Ok(_metricsAgentClient.GetNetworkMetrics(new Models.Requests.NetworkMetricsRequest
+            return Ok(_metricsAgentClient.GetNetworkMetrics(new NetworkMetricsRequest
             {
                 AgentId = agentId,
                 FromTime = fromTime,
@@ -29,7 +31,8 @@ namespace MetricsManager.Controllers
             }));
         }
 
-        [HttpGet("all/from/{fromTime}/to/{toTime}")]
+        //[HttpGet("all/from/{fromTime}/to/{toTime}")]
+        [HttpGet("get-all")]
         public IActionResult GetMetricsFromAll([FromRoute] TimeSpan fromTime, [FromRoute] TimeSpan toTime)
         {
             return Ok();
