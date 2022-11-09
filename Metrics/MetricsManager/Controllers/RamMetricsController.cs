@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace MetricsManager.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/ram")]
     [ApiController]
     public class RamMetricsController : ControllerBase
     {
@@ -21,7 +21,8 @@ namespace MetricsManager.Controllers
 
         //[HttpGet("agent/{agentId}/from/{fromTime}/to/{toTime}")]
         [HttpGet("get-all-by-id")]
-        public ActionResult<RamMetricsResponse> GetMetricsFromAgent([FromRoute] int agentId, [FromRoute] TimeSpan fromTime, [FromRoute] TimeSpan toTime)
+        public ActionResult<RamMetricsResponse> GetMetricsFromAgent(
+            [FromQuery] int agentId, [FromQuery] TimeSpan fromTime, [FromQuery] TimeSpan toTime)
         {
             return Ok(_metricsAgentClient.GetRamMetrics(new RamMetricsRequest
             {

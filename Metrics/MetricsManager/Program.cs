@@ -41,8 +41,37 @@ namespace MetricsManager
 
             builder.Services.AddSingleton<AgentPool>();
 
-            builder.Services.AddHttpClient();
             builder.Services.AddHttpClient<ICPUMetricsAgentClient, CPUMetricsAgentClient>()
+                .AddTransientHttpErrorPolicy(p => p.WaitAndRetryAsync(retryCount: 3,
+                sleepDurationProvider: (attemptCount) => TimeSpan.FromSeconds(attemptCount * 2),
+                onRetry: (response, sleepDuration, attemptCount, context) =>
+                {
+                    var logger = builder.Services.BuildServiceProvider().GetService<ILogger<Program>>();
+                    logger.LogError(response.Exception != null ? response.Exception :
+                        new Exception($"\n{response.Result.StatusCode}: {response.Result.RequestMessage}"),
+                        $"(attempt: {attemptCount}) request exception.");
+                }));
+            builder.Services.AddHttpClient<IHddMetricsAgentClient, HddMetricsAgentClient>()
+                .AddTransientHttpErrorPolicy(p => p.WaitAndRetryAsync(retryCount: 3,
+                sleepDurationProvider: (attemptCount) => TimeSpan.FromSeconds(attemptCount * 2),
+                onRetry: (response, sleepDuration, attemptCount, context) =>
+                {
+                    var logger = builder.Services.BuildServiceProvider().GetService<ILogger<Program>>();
+                    logger.LogError(response.Exception != null ? response.Exception :
+                        new Exception($"\n{response.Result.StatusCode}: {response.Result.RequestMessage}"),
+                        $"(attempt: {attemptCount}) request exception.");
+                }));
+            builder.Services.AddHttpClient<INetworkMetricsAgentClient, NetworkMetricsAgentClient>()
+                .AddTransientHttpErrorPolicy(p => p.WaitAndRetryAsync(retryCount: 3,
+                sleepDurationProvider: (attemptCount) => TimeSpan.FromSeconds(attemptCount * 2),
+                onRetry: (response, sleepDuration, attemptCount, context) =>
+                {
+                    var logger = builder.Services.BuildServiceProvider().GetService<ILogger<Program>>();
+                    logger.LogError(response.Exception != null ? response.Exception :
+                        new Exception($"\n{response.Result.StatusCode}: {response.Result.RequestMessage}"),
+                        $"(attempt: {attemptCount}) request exception.");
+                }));
+            builder.Services.AddHttpClient<IRamMetricsAgentClient, RamMetricsAgentClient>()
                 .AddTransientHttpErrorPolicy(p => p.WaitAndRetryAsync(retryCount: 3,
                 sleepDurationProvider: (attemptCount) => TimeSpan.FromSeconds(attemptCount * 2),
                 onRetry: (response, sleepDuration, attemptCount, context) =>

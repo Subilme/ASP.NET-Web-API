@@ -12,7 +12,7 @@ namespace MetricsAgent.Jobs
         public RamMetricJob(IServiceScopeFactory serviceScopeFactory)
         {
             _serviceScopeFactory = serviceScopeFactory;
-            _ramCounter = new PerformanceCounter("Processor", "% Processor Time", "_Total");
+            _ramCounter = new PerformanceCounter("Memory", "% Committed Bytes In Use", null);
         }
 
         public Task Execute(IJobExecutionContext context)

@@ -11,7 +11,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MetricsAgentTest", "Metrics
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MetricsManagerTest", "MetricsManagerTest\MetricsManagerTest.csproj", "{31ADAD9E-058F-4DCA-B6B6-41867FDEE0B0}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MetricsManager.Client", "MetricsManager.Client\MetricsManager.Client.csproj", "{5297D398-8DCE-42F5-ADDC-A3394C449514}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MetricsManager.Client", "MetricsManager.Client\MetricsManager.Client.csproj", "{5297D398-8DCE-42F5-ADDC-A3394C449514}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MetricsManager.WpfClient", "MetricsManager.WpfClient\MetricsManager.WpfClient.csproj", "{0311715B-0D4B-42D4-96B7-DCDD49DE56DB}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -39,6 +41,10 @@ Global
 		{5297D398-8DCE-42F5-ADDC-A3394C449514}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5297D398-8DCE-42F5-ADDC-A3394C449514}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5297D398-8DCE-42F5-ADDC-A3394C449514}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0311715B-0D4B-42D4-96B7-DCDD49DE56DB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0311715B-0D4B-42D4-96B7-DCDD49DE56DB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0311715B-0D4B-42D4-96B7-DCDD49DE56DB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0311715B-0D4B-42D4-96B7-DCDD49DE56DB}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

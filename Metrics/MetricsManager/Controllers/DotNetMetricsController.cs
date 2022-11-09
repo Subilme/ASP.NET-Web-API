@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace MetricsManager.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/dotnet")]
     [ApiController]
     public class DotNetMetricsController : ControllerBase
     {
@@ -21,7 +21,8 @@ namespace MetricsManager.Controllers
 
         //[HttpGet("agent/{agentId}/from/{fromTime}/to/{toTime}")]
         [HttpGet("get-all-by-id")]
-        public ActionResult<DotNetMetricsResponse> GetMetricsFromAgent([FromRoute] int agentId, [FromRoute] TimeSpan fromTime, [FromRoute] TimeSpan toTime)
+        public ActionResult<DotNetMetricsResponse> GetMetricsFromAgent(
+            [FromQuery] int agentId, [FromQuery] TimeSpan fromTime, [FromQuery] TimeSpan toTime)
         {
             return Ok(_metricsAgentClient.GetDotNetMetrics(new DotNetMetricsRequest
             {

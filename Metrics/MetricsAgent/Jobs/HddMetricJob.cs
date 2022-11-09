@@ -12,7 +12,7 @@ namespace MetricsAgent.Jobs
         public HddMetricJob(IServiceScopeFactory serviceScopeFactory)
         {
             _serviceScopeFactory = serviceScopeFactory;
-            _hddCounter = new PerformanceCounter("Processor", "% Processor Time", "_Total");
+            _hddCounter = new PerformanceCounter("PhysicalDisk", "% Disk Time", "_Total");
         }
 
         public Task Execute(IJobExecutionContext context)

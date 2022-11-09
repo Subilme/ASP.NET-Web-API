@@ -13,16 +13,20 @@ namespace MetricsAgent.Mappings
                 opt => opt.MapFrom(src => (long)src.Time.TotalSeconds));
             CreateMap<CPUMetric, CPUMetricDto>();
 
-            CreateMap<DotNetMetricCreateRequest, DotNetMetric>();
+            CreateMap<DotNetMetricCreateRequest, DotNetMetric>().ForMember(x => x.Time,
+                opt => opt.MapFrom(src => (long)src.Time.TotalSeconds));
             CreateMap<DotNetMetric, DotNetMetricDto>();
 
-            CreateMap<HddMetricCreateRequest, HddMetric>();
+            CreateMap<HddMetricCreateRequest, HddMetric>().ForMember(x => x.Time,
+                opt => opt.MapFrom(src => (long)src.Time.TotalSeconds));
             CreateMap<HddMetric, HddMetricDto>();
 
-            CreateMap<NetworkMetricCreateRequest, NetworkMetric>();
+            CreateMap<NetworkMetricCreateRequest, NetworkMetric>().ForMember(x => x.Time,
+                opt => opt.MapFrom(src => (long)src.Time.TotalSeconds));
             CreateMap<NetworkMetric, NetworkMetricDto>();
 
-            CreateMap<RamMetricCreateRequest, RamMetric>();
+            CreateMap<RamMetricCreateRequest, RamMetric>().ForMember(x => x.Time,
+                opt => opt.MapFrom(src => (long)src.Time.TotalSeconds));
             CreateMap<RamMetric, RamMetricDto>();
         }
     }

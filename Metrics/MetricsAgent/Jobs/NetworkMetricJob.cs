@@ -12,7 +12,7 @@ namespace MetricsAgent.Jobs
         public NetworkMetricJob(IServiceScopeFactory serviceScopeFactory)
         {
             _serviceScopeFactory = serviceScopeFactory;
-            _networkCounter = new PerformanceCounter("Processor", "% Processor Time", "_Total");
+            _networkCounter = new PerformanceCounter("Network Interface", "Bytes Total/sec", "_Total");
         }
 
         public Task Execute(IJobExecutionContext context)
