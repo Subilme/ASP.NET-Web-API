@@ -28,16 +28,16 @@ namespace MetricsManager.Controllers
         [HttpPut("enable/{agentId}")]
         public IActionResult EnableAgentById([FromRoute] int agentId)
         {
-            if (_agentPool.Values.ContainsKey(agentId))
-                _agentPool.Values[agentId].Enable = true;
+            if (_agentPool.Agents.ContainsKey(agentId))
+                _agentPool.Agents[agentId].Enable = true;
             return Ok();
         }
 
         [HttpPut("disable/{agentId}")]
         public IActionResult DisableAgentById([FromRoute] int agentId)
         {
-            if (_agentPool.Values.ContainsKey(agentId))
-                _agentPool.Values[agentId].Enable = false;
+            if (_agentPool.Agents.ContainsKey(agentId))
+                _agentPool.Agents[agentId].Enable = false;
             return Ok();
         }
 

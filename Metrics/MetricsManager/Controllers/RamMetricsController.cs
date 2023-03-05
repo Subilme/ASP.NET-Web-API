@@ -1,19 +1,39 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using MetricsManager.Models.Requests;
+using MetricsManager.Services.Client;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace MetricsManager.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/ram")]
     [ApiController]
     public class RamMetricsController : ControllerBase
     {
-        [HttpGet("agent/{agentId}/from/{fromTime}/to/{toTime}")]
-        public IActionResult GetMetricsFromAgent([FromRoute] int agentId, [FromRoute] TimeSpan fromTime, [FromRoute] TimeSpan toTime)
+        private readonly ILogger<RamMetricsController> _logger;
+        private IRamMetricsAgentClient _metricsAgentClient;
+
+        public RamMetricsController(ILogger<RamMetricsController> logger,
+            IRamMetricsAgentClient metricsAgentClient)
         {
-            return Ok();
+            _logger = logger;
+            _metricsAgentClient = metricsAgentClient;
         }
 
-        [HttpGet("all/from/{fromTime}/to/{toTime}")]
+        //[HttpGet("agent/{agentId}/from/{fromTime}/to/{toTime}")]
+        [HttpGet("get-all-by-id")]
+        public ActionResult<RamMetricsResponse> GetMetricsFromAgent(
+            [FromQuery] int agentId, [FromQuery] TimeSpan fromTime, [FromQuery] TimeSpan toTime)
+        {
+            return Ok(_metricsAgentClient.GetRamMetrics(new RamMetricsRequest
+            {
+                AgentId = agentId,
+                FromTime = fromTime,
+                ToTime = toTime
+            }));
+        }
+
+        //[HttpGet("all/from/{fromTime}/to/{toTime}")]
+        [HttpGet("get-all")]
         public IActionResult GetMetricsFromAll([FromRoute] TimeSpan fromTime, [FromRoute] TimeSpan toTime)
         {
             return Ok();
